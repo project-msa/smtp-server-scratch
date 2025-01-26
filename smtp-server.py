@@ -131,32 +131,32 @@ def smtp_client_server(client_socket, client_address):
                     accept_message = b"354 End data with <CR><LF>.<CR><LF> \n"
                     client_socket.send(accept_message)
 
-                    print(MAILDIR)
+                    print(MAILDIR) ###
                     if not os.path.isdir(MAILDIR):
-                        print("create maildir")
+                        print("create maildir") ###
                         os.makedirs(MAILDIR)
 
                     mail_dir = os.path.expanduser(MAILDIR + "/" + recipient_domain)
-                    print(mail_dir)
+                    print(mail_dir) ###
                     
                     if not os.path.isdir(mail_dir):
-                        print("created mail_dir")
+                        print("created mail_dir") ###
                         os.makedirs(mail_dir) 
                     
                     mail_sender = mail_dir + "/" + state["client_hostname"]
-                    print(mail_sender)
+                    print(mail_sender) ###
 
                     if not os.path.isdir(mail_sender):
-                        print("created mail_sender")
+                        print("created mail_sender") ###
                         os.makedirs(mail_sender) 
 
                     counter = 1
                     while os.path.isfile(f"{mail_sender}/{counter}.txt"):
-                        print("created file")
+                        print("created file") ###
                         counter += 1
                     
                     open_file = open(f"{mail_sender}/{counter}.txt", "w")
-                    print(f"{mail_sender}/{counter}.txt")
+                    print(f"{mail_sender}/{counter}.txt") ###
 
                     sender = client_socket.recv(1024).decode()
                     sender_mail = sender.strip().lower().split()[-1]
