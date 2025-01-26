@@ -3,10 +3,11 @@ import socket
 import re
 import os 
 
-MAILDIR = "~/Maildir"
+MAILDIR = "/home/kh4rg0sh/ctfs/Maildir"
+HOSTNAME = "kh4rg0sh"
 DOMAIN = "lbp.com"
 SERVER_IP = "10.81.4.216"
-PORT = 2525
+PORT = 25
 
 def smtp_client_server(client_socket, client_address):
     print("test") ###
@@ -85,14 +86,14 @@ def smtp_client_server(client_socket, client_address):
                                 client_socket.send(mail_transaction)
 
                     else: 
-                        error_message = b"503 5.5.1 Error: nested MAIL command\n"
+                        error_message = b"503 5.5.1 Error: nested MAIL command \n"
                         client_socket.send(error_message)
             
             elif message[0] == "RCPT" and message[1].startswith("TO:<"):
                 print("test RCPT TO") ###
 
                 if not state["MAIL"]:
-                    error_message = b"503 5.1.1 Bad sequence of commands\n"
+                    error_message = b"503 5.1.1 Bad sequence of commands \n"
                     client_socket.send(error_message) 
 
                 elif state["MAIL"] and state["HELO"]: 
@@ -110,11 +111,11 @@ def smtp_client_server(client_socket, client_address):
                         else:
 
                             recipient_hostname, recipient_domain = message[1][len("TO:<"):-len(">")].split("@")
-                            if recipient_hostname != "kh4rg0sh":
-                                error_message = b"550 5.5.7 Error: no such user \n"
+                            if recipient_hostname != HOSTNAME:
+                                error_message = b"550 5.1.1 Mailbox unavailable \n"
                                 client_socket.send(error_message)
 
-                            elif recipient_hostname == "kh4rg0sh" and recipient_domain != DOMAIN:
+                            elif recipient_hostname == HOSTNAME and recipient_domain != DOMAIN:
                                 print("handle what if wrong recipient domain") ###
 
                             else:
@@ -130,31 +131,63 @@ def smtp_client_server(client_socket, client_address):
                     accept_message = b"354 End data with <CR><LF>.<CR><LF> \n"
                     client_socket.send(accept_message)
 
+                    print(MAILDIR)
+                    if not os.path.isdir(MAILDIR):
+                        print("create maildir")
+                        os.makedirs(MAILDIR)
+
                     mail_dir = os.path.expanduser(MAILDIR + "/" + recipient_domain)
+                    print(mail_dir)
                     
                     if not os.path.isdir(mail_dir):
+                        print("created mail_dir")
                         os.makedirs(mail_dir) 
                     
                     mail_sender = mail_dir + "/" + state["client_hostname"]
-                    
+                    print(mail_sender)
+
                     if not os.path.isdir(mail_sender):
+                        print("created mail_sender")
                         os.makedirs(mail_sender) 
 
                     counter = 1
                     while os.path.isfile(f"{mail_sender}/{counter}.txt"):
+                        print("created file")
                         counter += 1
                     
                     open_file = open(f"{mail_sender}/{counter}.txt", "w")
+                    print(f"{mail_sender}/{counter}.txt")
 
-                    while True:
-                        data_message = client_socket.recv(1024).strip().decode()
-                        
-                        if data_message != ".":
-                            open_file.write(data_message)
+                    sender = client_socket.recv(1024).decode()
+                    sender_mail = sender.strip().lower().split()[-1]
+
+                    recipient = client_socket.recv(1024).decode()
+                    recipient_mail = recipient.strip().lower().split()[-1]
+
+                    if recipient_mail != HOSTNAME + "@" + DOMAIN:
+                        error_message = b"554 5.7.1 Recipient address rejected: Message header inconsistency"
+                        client_socket.send(error_message)
+                    
+                    elif sender_mail != state["client_hostname"] + "@" + state["client_domain"]:
+                        error_message = b"553 5.7.1 Sender address rejected: Policy violation"
+                        client_socket.send(error_message)
+                    
+                    else:
+                        open_file.write(sender)
+                        open_file.write(recipient)
+
+                        while True:
+                            data_message = client_socket.recv(1024).decode()
                             
-                        else: 
-                            open_file.close()
-                            break 
+                            if data_message != ".":
+                                open_file.write(data_message)
+                                
+                            else: 
+                                accept_message = b"250 OK: Message accepted \n"
+                                client_socket.send(accept_message)
+
+                                open_file.close()
+                                break 
 
                 else: 
 
@@ -166,6 +199,10 @@ def smtp_client_server(client_socket, client_address):
                 client_socket.close()
 
                 return 
+            
+            else:
+                error_message = b"500 5.5.2 Syntax error, command unrecognized \n"
+                client_socket.send(error_message)
 
     except Exception as error:
         print(f"Error encountered: {error}")
