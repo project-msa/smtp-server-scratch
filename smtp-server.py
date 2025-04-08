@@ -6,7 +6,9 @@ import os
 MAILDIR = "/home/kh4rg0sh/ctfs/Maildir"
 HOSTNAME = "kh4rg0sh"
 DOMAIN = "lbp.com"
-SERVER_IP = "10.81.4.216"
+# SERVER_IP = "10.81.4.216"
+# SERVER_IP = "192.168.146.56"
+SERVER_IP = "10.81.14.211"
 PORT = 25
 
 def smtp_client_server(client_socket, client_address):
@@ -152,42 +154,42 @@ def smtp_client_server(client_socket, client_address):
 
                     counter = 1
                     while os.path.isfile(f"{mail_sender}/{counter}.txt"):
-                        print("created file") ###
                         counter += 1
                     
                     open_file = open(f"{mail_sender}/{counter}.txt", "w")
                     print(f"{mail_sender}/{counter}.txt") ###
 
-                    sender = client_socket.recv(1024).decode()
-                    sender_mail = sender.strip().lower().split()[-1]
+                    # sender = client_socket.recv(1024).decode()
+                    # sender_mail = sender.strip().lower().split()[-1]
 
-                    recipient = client_socket.recv(1024).decode()
-                    recipient_mail = recipient.strip().lower().split()[-1]
+                    # recipient = client_socket.recv(1024).decode()
+                    # recipient_mail = recipient.strip().lower().split()[-1]
 
-                    if recipient_mail != HOSTNAME + "@" + DOMAIN:
-                        error_message = b"554 5.7.1 Recipient address rejected: Message header inconsistency"
-                        client_socket.send(error_message)
+                    # if recipient_mail != HOSTNAME + "@" + DOMAIN:
+                    #     error_message = b"554 5.7.1 Recipient address rejected: Message header inconsistency \n"
+                    #     client_socket.send(error_message)
                     
-                    elif sender_mail != state["client_hostname"] + "@" + state["client_domain"]:
-                        error_message = b"553 5.7.1 Sender address rejected: Policy violation"
-                        client_socket.send(error_message)
+                    # elif sender_mail != state["client_hostname"] + "@" + state["client_domain"]:
+                    #     error_message = b"553 5.7.1 Sender address rejected: Policy violation \n"
+                    #     client_socket.send(error_message)
                     
-                    else:
-                        open_file.write(sender)
-                        open_file.write(recipient)
+                    # else:
+                    # open_file.write(sender)
+                    # open_file.write(recipient)
 
-                        while True:
-                            data_message = client_socket.recv(1024).decode()
+                    while True:
+                        data_message = client_socket.recv(1024).strip().decode()
+                        print(data_message)
+                        
+                        if data_message != ".":
+                            open_file.write(data_message)
                             
-                            if data_message != ".":
-                                open_file.write(data_message)
-                                
-                            else: 
-                                accept_message = b"250 OK: Message accepted \n"
-                                client_socket.send(accept_message)
+                        else: 
+                            accept_message = b"250 OK: Message accepted \n"
+                            client_socket.send(accept_message)
 
-                                open_file.close()
-                                break 
+                            open_file.close()
+                            break 
 
                 else: 
 
